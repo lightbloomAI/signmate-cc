@@ -1,1 +1,2 @@
-export { DemoMode } from './DemoMode';
+export { DemoController } from './DemoController';
+export { DemoController as DemoMode } from './DemoController';
