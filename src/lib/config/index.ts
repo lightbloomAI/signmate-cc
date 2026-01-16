@@ -1,0 +1,16 @@
+export {
+  settingsManager,
+  getSettings,
+  getSetting,
+  updateSettings,
+  DEFAULT_SETTINGS,
+  type SignMateSettings,
+  type GeneralSettings,
+  type AudioSettings,
+  type SpeechSettings,
+  type TranslationSettings,
+  type AvatarSettings,
+  type DisplaySettings,
+  type PerformanceSettings,
+  type AccessibilitySettings,
+} from './settings';
