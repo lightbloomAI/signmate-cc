@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { keyboardManager, type KeyBinding } from '@/lib/keyboard';
 
 type KeyHandler = (event: KeyboardEvent) => void;
 
@@ -70,6 +71,125 @@ export function useKeyboardShortcuts(
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [handleKeyDown]);
+}
+
+/**
+ * Hook to subscribe to keyboard binding changes from the global manager
+ */
+export function useKeyboardBindings(): KeyBinding[] {
+  const [bindings, setBindings] = useState<KeyBinding[]>([]);
+
+  useEffect(() => {
+    // Get initial bindings
+    setBindings(keyboardManager.getBindings());
+
+    // Subscribe to changes
+    return keyboardManager.subscribe(setBindings);
+  }, []);
+
+  return bindings;
+}
+
+/**
+ * Hook to check if a specific key is currently pressed
+ */
+export function useKeyPressed(key: string): boolean {
+  const [isPressed, setIsPressed] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === key.toLowerCase()) {
+        setIsPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === key.toLowerCase()) {
+        setIsPressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [key]);
+
+  return isPressed;
+}
+
+/**
+ * Hook to create an escape key handler
+ */
+export function useEscapeKey(callback: () => void): void {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        callback();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [callback]);
+}
+
+/**
+ * Hook to create an enter key handler
+ */
+export function useEnterKey(
+  callback: () => void,
+  options?: { shift?: boolean; ctrl?: boolean }
+): void {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter') return;
+
+      const shiftRequired = options?.shift ?? false;
+      const ctrlRequired = options?.ctrl ?? false;
+
+      if (shiftRequired && !e.shiftKey) return;
+      if (ctrlRequired && !e.ctrlKey && !e.metaKey) return;
+
+      callback();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [callback, options]);
+}
+
+/**
+ * Hook for keyboard-based number input (1-9 for quick selections)
+ */
+export function useNumberKeySelect(
+  callback: (num: number) => void,
+  max: number = 9
+): void {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Skip if in input field
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      const num = parseInt(e.key, 10);
+      if (!isNaN(num) && num >= 1 && num <= max) {
+        callback(num);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [callback, max]);
 }
 
 // Pre-defined shortcuts for SignMate operators
