@@ -6,14 +6,21 @@ import { DemoMode } from '@/components/demo';
 import { StageDisplay } from '@/components/display/StageDisplay';
 import { ConfidenceMonitor } from '@/components/display/ConfidenceMonitor';
 import { LivestreamOverlay } from '@/components/display/LivestreamOverlay';
+import { AppShell } from '@/components/layout';
+import { WelcomeScreen } from '@/components/welcome';
+import { ErrorBoundary } from '@/components/error';
 import { useSignMateStore } from '@/store';
 import { SignMatePipeline } from '@/lib/pipeline';
+import { getSettings } from '@/lib/config/settings';
 import type { EventConfig, TranscriptionSegment, ASLTranslation } from '@/types';
 
-type AppMode = 'setup' | 'demo' | 'live';
+type AppMode = 'welcome' | 'setup' | 'demo' | 'live';
 
 export default function Home() {
-  const [mode, setMode] = useState<AppMode>('setup');
+  const settings = getSettings();
+  const [mode, setMode] = useState<AppMode>(
+    settings.general.showWelcomeScreen ? 'welcome' : 'setup'
+  );
   const [pipeline, setPipeline] = useState<SignMatePipeline | null>(null);
   const [currentTranscription, setCurrentTranscription] = useState<TranscriptionSegment | undefined>();
   const [recentTranscriptions, setRecentTranscriptions] = useState<TranscriptionSegment[]>([]);
@@ -26,7 +33,6 @@ export default function Home() {
     setAvatarState,
     pipelineStatus,
     updatePipelineStatus,
-    activeDisplayMode,
     setDemoMode,
     reset,
   } = useSignMateStore();
@@ -37,8 +43,8 @@ export default function Home() {
 
     // Initialize pipeline
     const newPipeline = new SignMatePipeline({
-      useDeepgram: false, // Use Web Speech API for demo
-      targetLatency: 500,
+      useDeepgram: settings.speech.provider === 'deepgram',
+      targetLatency: settings.performance.targetLatency,
       batchTranslation: true,
       batchDelay: 150,
     });
@@ -78,7 +84,7 @@ export default function Home() {
         console.error('Failed to start pipeline:', error);
       }
     }
-  }, [setCurrentEvent, setAvatarState, updatePipelineStatus]);
+  }, [setCurrentEvent, setAvatarState, updatePipelineStatus, settings]);
 
   // Handle sign animation complete
   const handleSignComplete = useCallback(() => {
@@ -118,6 +124,8 @@ export default function Home() {
     }
     setMode('setup');
     reset();
+    setCurrentTranscription(undefined);
+    setRecentTranscriptions([]);
   }, [pipeline, reset]);
 
   // Cleanup on unmount
@@ -127,118 +135,113 @@ export default function Home() {
     };
   }, [pipeline]);
 
-  // Render based on current mode
-  if (mode === 'demo') {
-    return <DemoMode onExitDemo={handleExitDemo} />;
+  // Welcome screen
+  if (mode === 'welcome') {
+    return (
+      <ErrorBoundary>
+        <WelcomeScreen
+          onStartSetup={() => setMode('setup')}
+          onStartDemo={handleStartDemo}
+          showHealthCheck={true}
+        />
+      </ErrorBoundary>
+    );
   }
 
+  // Demo mode
+  if (mode === 'demo') {
+    return (
+      <ErrorBoundary>
+        <DemoMode onExitDemo={handleExitDemo} />
+      </ErrorBoundary>
+    );
+  }
+
+  // Live mode with event
   if (mode === 'live' && currentEvent) {
     const displayConfig = currentEvent.displays[0];
 
     return (
-      <div style={{ minHeight: '100vh', background: '#0f0f0f', padding: '16px' }}>
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '16px',
-          padding: '12px 16px',
-          background: '#1a1a1a',
-          borderRadius: '8px'
-        }}>
-          <div>
-            <h1 style={{ color: '#fff', fontSize: '18px', fontWeight: 600 }}>
-              {currentEvent.name}
-            </h1>
-            {currentEvent.venue && (
-              <p style={{ color: '#6b7280', fontSize: '14px' }}>{currentEvent.venue}</p>
+      <ErrorBoundary>
+        <AppShell
+          showHeader={true}
+          showStatusBar={true}
+          eventName={currentEvent.name}
+          onEndEvent={handleExitLive}
+        >
+          <div style={{ padding: '16px', height: 'calc(100vh - 120px)' }}>
+            {displayConfig?.mode === 'stage' && (
+              <StageDisplay
+                avatarConfig={avatarConfig}
+                avatarState={avatarState}
+                transcription={currentTranscription}
+                showCaptions={displayConfig.showCaptions}
+                onSignComplete={handleSignComplete}
+              />
+            )}
+
+            {displayConfig?.mode === 'confidence-monitor' && (
+              <ConfidenceMonitor
+                avatarConfig={avatarConfig}
+                avatarState={avatarState}
+                transcription={currentTranscription}
+                pipelineStatus={pipelineStatus}
+                recentTranscriptions={recentTranscriptions}
+                onSignComplete={handleSignComplete}
+              />
+            )}
+
+            {displayConfig?.mode === 'livestream-overlay' && (
+              <LivestreamOverlay
+                avatarConfig={avatarConfig}
+                avatarState={avatarState}
+                transcription={currentTranscription}
+                showCaptions={displayConfig.showCaptions}
+                position="bottom-right"
+                size={displayConfig.avatarSize === 'small' ? 'small' : displayConfig.avatarSize === 'large' ? 'large' : 'medium'}
+                onSignComplete={handleSignComplete}
+              />
             )}
           </div>
-          <button
-            onClick={handleExitLive}
-            style={{
-              padding: '8px 16px',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: 600,
-            }}
-          >
-            End Event
-          </button>
-        </div>
-
-        {displayConfig?.mode === 'stage' && (
-          <StageDisplay
-            avatarConfig={avatarConfig}
-            avatarState={avatarState}
-            transcription={currentTranscription}
-            showCaptions={displayConfig.showCaptions}
-            onSignComplete={handleSignComplete}
-          />
-        )}
-
-        {displayConfig?.mode === 'confidence-monitor' && (
-          <ConfidenceMonitor
-            avatarConfig={avatarConfig}
-            avatarState={avatarState}
-            transcription={currentTranscription}
-            pipelineStatus={pipelineStatus}
-            recentTranscriptions={recentTranscriptions}
-            onSignComplete={handleSignComplete}
-          />
-        )}
-
-        {displayConfig?.mode === 'livestream-overlay' && (
-          <LivestreamOverlay
-            avatarConfig={avatarConfig}
-            avatarState={avatarState}
-            transcription={currentTranscription}
-            showCaptions={displayConfig.showCaptions}
-            position="bottom-right"
-            size={displayConfig.avatarSize === 'small' ? 'small' : displayConfig.avatarSize === 'large' ? 'large' : 'medium'}
-            onSignComplete={handleSignComplete}
-          />
-        )}
-      </div>
+        </AppShell>
+      </ErrorBoundary>
     );
   }
 
   // Setup mode (default)
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '40px 20px'
-    }}>
-      <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{
-            color: 'white',
-            fontSize: '48px',
-            fontWeight: 800,
-            marginBottom: '12px',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
-          }}>
-            SignMate
-          </h1>
-          <p style={{
-            color: 'rgba(255,255,255,0.9)',
-            fontSize: '20px',
-            fontWeight: 500
-          }}>
-            Real-time AI Sign Language Interpreter for Live Events
-          </p>
-        </div>
+    <ErrorBoundary>
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '40px 20px'
+      }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h1 style={{
+              color: 'white',
+              fontSize: '48px',
+              fontWeight: 800,
+              marginBottom: '12px',
+              textShadow: '2px 2px 4px rgba(0,0,0,0.2)'
+            }}>
+              SignMate
+            </h1>
+            <p style={{
+              color: 'rgba(255,255,255,0.9)',
+              fontSize: '20px',
+              fontWeight: 500
+            }}>
+              Real-time AI Sign Language Interpreter for Live Events
+            </p>
+          </div>
 
-        <EventSetup
-          onConfigComplete={handleConfigComplete}
-          onStartDemo={handleStartDemo}
-        />
+          <EventSetup
+            onConfigComplete={handleConfigComplete}
+            onStartDemo={handleStartDemo}
+          />
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
