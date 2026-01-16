@@ -5,3 +5,4 @@ export { useKeyboardShortcuts, useOperatorShortcuts } from './useKeyboardShortcu
 export { useWebSocket } from './useWebSocket';
 export { usePoseBlender } from './usePoseBlender';
 export { useErrorHandler } from './useErrorHandler';
+export { usePerformanceMonitor } from './usePerformanceMonitor';
