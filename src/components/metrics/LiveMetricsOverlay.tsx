@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { usePipelineMetrics } from '@/hooks/useStreamingPipeline';
-import { useConnectionHealth } from '@/lib/websocket';
+import { useConnectionHealthSafe } from '@/lib/websocket';
 
 /**
  * Live Metrics Overlay
@@ -43,14 +43,7 @@ export function LiveMetricsOverlay({
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
   const pipelineMetrics = usePipelineMetrics();
-  let connectionHealth: ReturnType<typeof useConnectionHealth> | null = null;
-
-  // Try to use connection health, but don't fail if context is missing
-  try {
-    connectionHealth = useConnectionHealth();
-  } catch {
-    // Connection health context not available
-  }
+  const connectionHealth = useConnectionHealthSafe();
 
   // Historical data for charts
   const [latencyHistory, setLatencyHistory] = useState<MetricDataPoint[]>([]);

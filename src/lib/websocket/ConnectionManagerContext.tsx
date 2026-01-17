@@ -374,3 +374,34 @@ export function useConnectionEvent<T>(
     return unsubscribe;
   }, [primaryConnection, event, handler]);
 }
+
+/**
+ * Safe version of useConnectionHealth that returns null if context is not available
+ * Use this when the component might render outside of ConnectionManagerProvider
+ */
+export function useConnectionHealthSafe() {
+  const context = useContext(ConnectionManagerContext);
+
+  if (!context) {
+    return null;
+  }
+
+  const { metrics, connectionState, isConnected } = context;
+
+  return {
+    isConnected,
+    state: connectionState,
+    latency: metrics?.latency ?? 0,
+    averageLatency: metrics?.averageLatency ?? 0,
+    jitter: metrics?.jitter ?? 0,
+    packetLoss: metrics?.packetLoss ?? 0,
+    quality: metrics?.connectionQuality ?? 'good',
+    missedHeartbeats: metrics?.missedHeartbeats ?? 0,
+    reconnectCount: metrics?.reconnectCount ?? 0,
+    connectionDuration: metrics?.connectedAt ? Date.now() - metrics.connectedAt : 0,
+    messagesReceived: metrics?.messagesReceived ?? 0,
+    messagesSent: metrics?.messagesSent ?? 0,
+    bytesReceived: metrics?.bytesReceived ?? 0,
+    bytesSent: metrics?.bytesSent ?? 0,
+  };
+}

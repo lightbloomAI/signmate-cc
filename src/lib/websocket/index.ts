@@ -19,5 +19,6 @@ export {
   useConnectionManager,
   useSecondaryConnection,
   useConnectionHealth,
+  useConnectionHealthSafe,
   useConnectionEvent,
 } from './ConnectionManagerContext';

@@ -235,7 +235,7 @@ export function QuickStartWizard({
         </div>
         <h1 className="text-3xl font-bold text-white mb-3">Welcome to SignMate</h1>
         <p className="text-lg text-gray-400 max-w-md mx-auto">
-          Real-time AI sign language interpretation for your live events. Let's get you set up in just a few steps.
+          Real-time AI sign language interpretation for your live events. Let&apos;s get you set up in just a few steps.
         </p>
       </div>
 

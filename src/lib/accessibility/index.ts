@@ -55,4 +55,4 @@ export {
   useKeyboardNavigation,
   useAriaLive,
   useSkipLink,
-} from './useAccessibility.js';
+} from './useAccessibility';
