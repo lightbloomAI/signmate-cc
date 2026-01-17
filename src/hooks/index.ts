@@ -12,3 +12,8 @@ export {
   useTranscription,
   usePipelineMetrics,
 } from './useStreamingPipeline';
+export {
+  useSignDictionary,
+  useSignLookup,
+  useRelatedSigns,
+} from './useSignDictionary';
