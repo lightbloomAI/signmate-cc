@@ -128,8 +128,8 @@ export function useDebouncedCallback<T extends (...args: unknown[]) => void>(
 
   return useMemo(
     () =>
-      debounce((...args: Parameters<T>) => {
-        callbackRef.current(...args);
+      debounce((...args: unknown[]) => {
+        callbackRef.current(...args as Parameters<T>);
       }, delay) as T,
     [delay]
   );
@@ -147,8 +147,8 @@ export function useThrottledCallback<T extends (...args: unknown[]) => void>(
 
   return useMemo(
     () =>
-      throttle((...args: Parameters<T>) => {
-        callbackRef.current(...args);
+      throttle((...args: unknown[]) => {
+        callbackRef.current(...args as Parameters<T>);
       }, limit) as T,
     [limit]
   );
