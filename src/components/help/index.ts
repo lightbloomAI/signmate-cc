@@ -7,3 +7,5 @@ export {
   SIGNMATE_HELP_ARTICLES,
   SIGNMATE_SHORTCUTS,
 } from './Help';
+
+export { HelpCenter } from './HelpCenter';
