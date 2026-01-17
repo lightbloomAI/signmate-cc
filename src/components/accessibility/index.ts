@@ -7,3 +7,5 @@ export {
   useRovingTabIndex,
   useLiveRegion,
 } from './KeyboardNavigation';
+
+export { AccessibilitySettings } from './AccessibilitySettings';
