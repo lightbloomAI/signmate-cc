@@ -240,3 +240,14 @@ export function getSignMatePipeline(config?: Partial<PipelineConfig>): SignMateP
   }
   return pipelineInstance;
 }
+
+// Re-export streaming pipeline
+export {
+  RealTimeStreamingPipeline,
+  createStreamingPipeline,
+  getStreamingPipeline,
+  type PipelineState,
+  type PipelineEventType,
+  type StreamingPipelineConfig,
+  type PipelineMetrics,
+} from './streamingPipeline';
