@@ -1,6 +1,6 @@
 'use client';
 
-import { Component, ErrorInfo, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -553,6 +553,222 @@ export function ErrorDisplay({
             Dismiss
           </button>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Error Alert for non-fatal errors
+interface ErrorAlertProps {
+  error: string | Error;
+  onDismiss?: () => void;
+  autoHide?: number;
+}
+
+export function ErrorAlert({ error, onDismiss, autoHide }: ErrorAlertProps) {
+  const [visible, setVisible] = React.useState(true);
+
+  React.useEffect(() => {
+    if (autoHide && onDismiss) {
+      const timer = setTimeout(() => {
+        setVisible(false);
+        onDismiss();
+      }, autoHide);
+      return () => clearTimeout(timer);
+    }
+  }, [autoHide, onDismiss]);
+
+  if (!visible) return null;
+
+  const message = typeof error === 'string' ? error : error.message;
+
+  return (
+    <div className="error-alert" role="alert">
+      <style jsx>{`
+        .error-alert {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: #7f1d1d;
+          border-radius: 8px;
+          animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .alert-icon {
+          font-size: 18px;
+          color: #fca5a5;
+        }
+
+        .alert-message {
+          flex: 1;
+          font-size: 13px;
+          color: #fecaca;
+        }
+
+        .alert-dismiss {
+          padding: 4px 8px;
+          background: transparent;
+          border: none;
+          color: #f87171;
+          font-size: 18px;
+          cursor: pointer;
+          opacity: 0.7;
+          transition: opacity 0.2s;
+        }
+
+        .alert-dismiss:hover {
+          opacity: 1;
+        }
+      `}</style>
+
+      <span className="alert-icon">⚠</span>
+      <span className="alert-message">{message}</span>
+      {onDismiss && (
+        <button className="alert-dismiss" onClick={onDismiss} aria-label="Dismiss">
+          ×
+        </button>
+      )}
+    </div>
+  );
+}
+
+// Pipeline-specific error display
+interface PipelineErrorProps {
+  stage: 'audio' | 'speech' | 'translation' | 'rendering';
+  message: string;
+  onRetry?: () => void;
+  onSkip?: () => void;
+}
+
+const STAGE_CONFIG = {
+  audio: { icon: '🎙', label: 'Audio Capture' },
+  speech: { icon: '💬', label: 'Speech Recognition' },
+  translation: { icon: '🤟', label: 'ASL Translation' },
+  rendering: { icon: '👤', label: 'Avatar Rendering' },
+};
+
+export function PipelineError({
+  stage,
+  message,
+  onRetry,
+  onSkip,
+}: PipelineErrorProps) {
+  const config = STAGE_CONFIG[stage];
+
+  return (
+    <div className="pipeline-error">
+      <style jsx>{`
+        .pipeline-error {
+          display: flex;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid #dc2626;
+          border-radius: 8px;
+        }
+
+        .error-stage {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          min-width: 60px;
+        }
+
+        .stage-icon {
+          font-size: 24px;
+          margin-bottom: 4px;
+        }
+
+        .stage-label {
+          font-size: 10px;
+          color: #6b7280;
+          text-align: center;
+        }
+
+        .error-content {
+          flex: 1;
+        }
+
+        .error-title {
+          font-size: 14px;
+          font-weight: 600;
+          color: #fca5a5;
+          margin-bottom: 4px;
+        }
+
+        .error-message {
+          font-size: 13px;
+          color: #f87171;
+          margin-bottom: 12px;
+        }
+
+        .error-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .action-btn {
+          padding: 6px 12px;
+          font-size: 12px;
+          font-weight: 500;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          border: none;
+        }
+
+        .action-btn.retry {
+          background: #dc2626;
+          color: white;
+        }
+
+        .action-btn.retry:hover {
+          background: #b91c1c;
+        }
+
+        .action-btn.skip {
+          background: #374151;
+          color: #e5e7eb;
+        }
+
+        .action-btn.skip:hover {
+          background: #4b5563;
+        }
+      `}</style>
+
+      <div className="error-stage">
+        <span className="stage-icon">{config.icon}</span>
+        <span className="stage-label">{config.label}</span>
+      </div>
+
+      <div className="error-content">
+        <div className="error-title">Pipeline Error</div>
+        <div className="error-message">{message}</div>
+        <div className="error-actions">
+          {onRetry && (
+            <button className="action-btn retry" onClick={onRetry}>
+              Retry
+            </button>
+          )}
+          {onSkip && (
+            <button className="action-btn skip" onClick={onSkip}>
+              Skip
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
