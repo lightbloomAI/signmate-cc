@@ -13,7 +13,7 @@ import { ConnectionManagerProvider } from '@/lib/websocket';
 
 export default function InterpreterPage() {
   return (
-    <ConnectionManagerProvider>
+    <ConnectionManagerProvider autoConnect={false}>
       <PageLayout>
         <PageHeader
           title="Interpreter"

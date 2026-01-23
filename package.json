@@ -14,33 +14,37 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@deepgram/sdk": "^3.0.0",
+    "@react-three/drei": "^9.102.0",
+    "@react-three/fiber": "^8.15.0",
     "next": "^14.2.0",
+    "openai": "^4.28.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
-    "three": "^0.162.0",
-    "@react-three/fiber": "^8.15.0",
-    "@react-three/drei": "^9.102.0",
     "socket.io": "^4.7.0",
     "socket.io-client": "^4.7.0",
-    "zustand": "^4.5.0",
-    "openai": "^4.28.0",
-    "@deepgram/sdk": "^3.0.0",
-    "ws": "^8.16.0"
+    "three": "^0.162.0",
+    "ws": "^8.16.0",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
+    "@testing-library/jest-dom": "^6.4.0",
+    "@testing-library/react": "^14.2.0",
     "@types/node": "^20.11.0",
-    "@types/ws": "^8.5.0",
     "@types/react": "^18.3.0",
     "@types/react-dom": "^18.3.0",
     "@types/three": "^0.162.0",
-    "typescript": "^5.4.0",
+    "@types/ws": "^8.5.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.23",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.0",
-    "vitest": "^1.4.0",
-    "@vitejs/plugin-react": "^4.2.0",
     "jsdom": "^24.0.0",
-    "@testing-library/jest-dom": "^6.4.0",
-    "@testing-library/react": "^14.2.0"
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0"
   },
   "engines": {
     "node": ">=18.0.0"

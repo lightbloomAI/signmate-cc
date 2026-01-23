@@ -9,6 +9,7 @@ import { ConnectionHealthMonitor, ConnectionIndicator } from '@/components/conne
 import { CaptionDisplay } from '@/components/captions/CaptionDisplay';
 import { SignQueueDisplay } from '@/components/signs/SignQueueDisplay';
 import type { ASLSign, TranscriptionSegment, PipelineError, AvatarState, ExpressionState } from '@/types';
+import { getASLTranslator } from '@/lib/asl/translator';
 
 /**
  * Interpreter Interface
@@ -52,6 +53,16 @@ export function InterpreterInterface({
   );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [currentTime, setCurrentTime] = useState<string>('');
+
+  // Update clock on client only
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleTimeString());
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Pipeline hook
   const {
@@ -68,6 +79,7 @@ export function InterpreterInterface({
     pause,
     resume,
   } = useStreamingPipeline({
+    autoInitialize: true,
     onSigns: handleSigns,
     onError: handlePipelineError,
   });
@@ -101,6 +113,30 @@ export function InterpreterInterface({
   function handlePipelineError(error: Error, stage: PipelineError['stage'], recoverable: boolean) {
     console.error(`[Interpreter] Pipeline error in ${stage}:`, error);
     // Could show toast notification here
+  }
+
+  // Demo mode - test avatar without speech recognition
+  async function runDemo() {
+    const translator = getASLTranslator();
+    const phrases = [
+      'Hello',
+      'Thank you',
+      'How are you',
+      'Good morning',
+      'Welcome',
+    ];
+
+    for (const phrase of phrases) {
+      const translation = await translator.translate(phrase);
+      // Slow down each sign for better visibility
+      const slowedSigns = translation.signs.map(sign => ({
+        ...sign,
+        duration: Math.max(sign.duration * 2, 1200), // At least 1.2 seconds per sign
+      }));
+      handleSigns(slowedSigns, phrase);
+      // Wait for signs to animate before next phrase (longer pause)
+      await new Promise(resolve => setTimeout(resolve, slowedSigns.length * 1500 + 800));
+    }
   }
 
   // Handle sign animation complete
@@ -277,6 +313,14 @@ export function InterpreterInterface({
         </button>
 
         <button
+          onClick={runDemo}
+          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded transition-colors"
+          title="Run demo animation"
+        >
+          Demo
+        </button>
+
+        <button
           onClick={() => setShowSettings(!showSettings)}
           className="p-2 text-gray-400 hover:text-white transition-colors"
         >
@@ -318,7 +362,7 @@ export function InterpreterInterface({
           Latency: <span className={latency > 500 ? 'text-yellow-400' : 'text-green-400'}>{latency}ms</span>
         </span>
         <span className="text-gray-400">
-          {new Date().toLocaleTimeString()}
+          {currentTime}
         </span>
       </div>
     </footer>
