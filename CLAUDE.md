@@ -1,10 +1,77 @@
 # SignMate - Claude Code Context
 
-## Project Overview
+## Mission
 
-Real-time AI sign language interpreter for live events. Converts speech to ASL via 3D avatar animation.
+Build a scalable speech-to-ASL system that benefits the deaf community. Not limited to conferences — airports, movies, apps, kiosks, anywhere.
 
-**Pipeline:** Audio → ASR (Deepgram/Aldea) → Text → ASL Translator → Avatar Animation (Three.js)
+## Pipeline Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        SIGNMATE PIPELINE                         │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│   [ASR] → [Glossing] → [Motion Engine] → [Blending] → [Avatar]  │
+│                                                                  │
+│   NOW:       NOW:         NOW:            NOW:         NOW:      │
+│   Web        Rule-based   JSON library    Interpolate  Three.js  │
+│   Speech     dictionary   MediaPipe       (simple)     custom    │
+│   API                     capture                                │
+│                                                                  │
+│   LATER:     LATER:       LATER:          LATER:       LATER:    │
+│   Deepgram   ML model     Pro mocap       Learned      MetaHuman │
+│   Whisper                 gloves          coartic.     or better │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Development Philosophy
+
+**Cheap first, upgrade later.** Build with free/cheap components, prove it works, then swap in better parts. Every component should be replaceable.
+
+**Show it can scale before spending.** No expensive hardware or services until the pipeline proves itself end-to-end.
+
+## SignMate Motion Format (Universal)
+
+Avatar-agnostic format. Capture once, render on any avatar.
+
+```typescript
+interface SignMotion {
+  gloss: string; // "HELLO", "THANK-YOU"
+
+  // Upper body (normalized joint rotations)
+  body: JointFrame[]; // shoulder, elbow, wrist
+
+  // Hands (21 joints each, per frame)
+  leftHand: HandFrame[];
+  rightHand: HandFrame[];
+
+  // Face (ARKit-compatible blendshapes)
+  face: FaceFrame[]; // jawOpen, mouthSmile, browUp, etc.
+
+  // For blending between signs
+  entryPose: Pose; // where hands start
+  exitPose: Pose; // where hands end
+
+  // Metadata
+  fps: number; // typically 30
+  frameCount: number;
+  durationMs: number;
+}
+```
+
+## Key Focus Areas
+
+**Fingers**: Must be precise. ASL is a hand language.
+**Face**: Critical differentiator. Facial grammar is linguistic, not decorative.
+**Upper body**: Arms, shoulders, torso. No legs/dancing needed.
+
+## Current Priorities
+
+1. **Capture tool** — Browser-based MediaPipe recorder for building sign library
+2. **Motion format** — Define spec, convert existing captures
+3. **Blending engine** — Eliminate rest poses between signs, smooth transitions
+4. **Avatar rig** — Three.js avatar optimized for hands/face
 
 ## Commands
 
@@ -19,85 +86,124 @@ npm run test:watch   # Tests in watch mode
 
 ## Pre-commit Hooks
 
-Husky runs on commit:
+Husky runs on every commit:
 
 1. lint-staged (Prettier)
 2. `npm run typecheck`
 3. `npm run test`
 
-If tests fail, commit blocks. Fix errors before committing.
+**IMPORTANT**: If hooks fail, fix errors before committing. Don't skip hooks.
+
+## Code Conventions
+
+- TypeScript strict mode
+- Path alias: `@/*` → `./src/*`
+- React functional components + hooks
+- Zustand for state
+- Three.js via @react-three/fiber
+- Tests: Vitest + React Testing Library
 
 ## Architecture
 
 ```
 src/
-├── app/              # Next.js pages (App Router)
-├── components/       # React components
-│   ├── avatar/       # 3D avatar rendering (Three.js/R3F)
-│   ├── display/      # Stage/livestream overlays
+├── app/              # Next.js App Router pages
+├── components/
+│   ├── avatar/       # 3D avatar (Three.js/R3F)
+│   ├── capture/      # Motion capture UI (TODO)
 │   └── ...
-├── hooks/            # Custom React hooks
-├── lib/              # Core business logic
-│   ├── speech/       # ASR integrations (Deepgram, Aldea)
-│   ├── asl/          # English→ASL translation
-│   ├── animation/    # Pose blending, interpolation
-│   ├── pipeline/     # Streaming pipeline orchestration
-│   └── ...
-├── store/            # Zustand state management
-└── types/            # TypeScript type definitions
+├── hooks/
+├── lib/
+│   ├── speech/       # ASR (Deepgram, Aldea, Web Speech)
+│   ├── asl/          # English → ASL glossing
+│   ├── motion/       # Motion format, library, blending (TODO)
+│   ├── animation/    # Pose interpolation
+│   └── pipeline/     # Orchestration
+├── store/            # Zustand state
+└── types/
 ```
-
-## Key Files
-
-- `src/lib/speech/speechManager.ts` - Unified ASR interface
-- `src/lib/asl/translator.ts` - English→ASL glossary + translation
-- `src/lib/animation/poseBlender.ts` - Sign blending/transitions
-- `src/lib/pipeline/streamingPipeline.ts` - Real-time orchestration
-- `src/components/avatar/AvatarRenderer.tsx` - Three.js avatar component
-- `src/store/index.ts` - Global app state (Zustand)
-
-## Code Conventions
-
-- TypeScript strict mode enabled
-- Path alias: `@/*` → `./src/*`
-- React functional components with hooks
-- Zustand for state (not Redux)
-- Three.js via @react-three/fiber (R3F)
-- Tests: Vitest + React Testing Library
 
 ## ASL Domain Knowledge
 
-**Glosses:** Uppercase notation for ASL signs (e.g., `HELLO`, `THANK-YOU`)
+**Glosses**: Uppercase notation for signs (HELLO, THANK-YOU, IX-1)
+**Fingerspelling**: Unknown words spelled letter-by-letter (FS:CLAUDE)
+**Non-manual markers**: Facial expressions, head movements — grammatically required, not optional
+**Coarticulation**: Signs blend into each other based on neighbors
 
-**Key concepts:**
+---
 
-- Signs have: handshape, location, movement, non-manual markers (facial expressions)
-- Word mapping: Many English words map to same sign (e.g., "hi"/"hey" → `HELLO`)
-- Fingerspelling: Unknown words spelled letter-by-letter (prefix: `FS:`)
-- Non-manual markers: head nods, facial expressions integral to grammar
-
-## Testing
-
-```bash
-# Run all tests
-npm run test
-
-# Run specific test file
-npx vitest run src/lib/asl/translator.test.ts
-
-# Watch mode for TDD
-npm run test:watch
-```
+# Working Style with Claude Code
 
 ## Plan Mode
 
-- Make the plan extremely concise. Sacrifice grammar for the sake of concision.
-- At the end of each plan, give me a list of unresolved questions to answer, if any.
+- Keep plans extremely concise. Sacrifice grammar for brevity.
+- End every plan with unresolved questions, if any.
+- Use plan mode for multi-file changes or architectural decisions.
+- Skip planning for single-file fixes or obvious tasks.
 
-## Common Tasks
+## Session Management
 
-**Add new ASL sign:** Edit `src/lib/asl/translator.ts`, add to `ASL_GLOSSARY` with handshape, location, movement, non-manual markers.
+- `/clear` between unrelated tasks
+- `/compact` if context gets long during a task
+- Course-correct early — interrupt with `Esc` if going wrong direction
+- After 2 failed corrections, `/clear` and rewrite prompt
 
-**Add speech provider:** Implement in `src/lib/speech/`, follow `DeepgramRecognizer` pattern, export from `index.ts`.
+## Verification
 
-**Add component:** Create in appropriate `src/components/` subfolder, export from `index.ts`.
+**Always verify work.** Run tests, check types, take screenshots.
+
+```bash
+# After code changes
+npm run typecheck && npm run test
+
+# After UI changes
+# Take screenshot, compare to expected
+```
+
+## Prompting Style
+
+Be specific:
+
+- ❌ "fix the bug"
+- ✅ "login fails after session timeout. check src/auth/, write failing test, then fix"
+
+Reference files directly:
+
+- ❌ "look at the translator"
+- ✅ "read src/lib/asl/translator.ts"
+
+## Task Approach
+
+1. **Explore** — Read relevant files, understand current state
+2. **Plan** — Outline approach (for non-trivial tasks)
+3. **Implement** — Write code
+4. **Verify** — Run tests, typecheck
+5. **Commit** — Descriptive message
+
+## For Long/Autonomous Sessions
+
+When running autonomously or AFK:
+
+- Work on ONE focused task at a time
+- Commit working increments frequently
+- If stuck for 2+ attempts, stop and document the blocker
+- Don't make sweeping changes without explicit approval
+
+## Subagents
+
+Use subagents for:
+
+- Exploring unfamiliar parts of codebase
+- Code review (fresh context, no bias)
+- Research that would pollute main context
+
+---
+
+# Unresolved Questions
+
+(Update this section as we work)
+
+1. Which avatar to commit to first? (Leaning: custom Three.js rig)
+2. MediaPipe vs other free capture for hand tracking quality?
+3. Motion format — finalize spec before building capture tool?
+4. How to handle signs with multiple valid forms?
