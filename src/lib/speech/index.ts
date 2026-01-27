@@ -1,17 +1,32 @@
 // Browser-based speech recognition
-export { SpeechRecognizer, getSpeechRecognizer } from './recognizer';
-export type { SpeechRecognizerConfig, TranscriptionCallback, ErrorCallback } from './recognizer';
+export { SpeechRecognizer, getSpeechRecognizer } from "./recognizer";
+export type {
+  SpeechRecognizerConfig,
+  TranscriptionCallback,
+  ErrorCallback,
+} from "./recognizer";
 
 // Legacy Deepgram (SDK-based)
-export { DeepgramSpeechRecognizer } from './deepgram';
-export type { DeepgramConfig as LegacyDeepgramConfig, DeepgramTranscriptionCallback, DeepgramErrorCallback } from './deepgram';
+export { DeepgramSpeechRecognizer } from "./deepgram";
+export type {
+  DeepgramConfig as LegacyDeepgramConfig,
+  DeepgramTranscriptionCallback,
+  DeepgramErrorCallback,
+} from "./deepgram";
 
 // New Deepgram WebSocket-based recognizer (lower latency)
 export {
   DeepgramRecognizer,
   createDeepgramRecognizer,
   type DeepgramConfig,
-} from './deepgramRecognizer';
+} from "./deepgramRecognizer";
+
+// Aldea AI recognizer (Deepgram-compatible)
+export {
+  AldeaRecognizer,
+  createAldeaRecognizer,
+  type AldeaConfig,
+} from "./aldeaRecognizer";
 
 // Audio processing utilities
 export {
@@ -20,7 +35,7 @@ export {
   isSilent,
   type AudioProcessorConfig,
   type AudioDataCallback,
-} from './audioProcessor';
+} from "./audioProcessor";
 
 // Unified speech manager
 export {
@@ -30,4 +45,4 @@ export {
   type SpeechProvider,
   type SpeechManagerConfig,
   type StatusCallback,
-} from './speechManager';
+} from "./speechManager";

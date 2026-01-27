@@ -87,7 +87,7 @@ const defaultExpression = {
 
 export default function AvatarTestPage() {
   const [avatarUrl, setAvatarUrl] = useState(
-    "https://models.readyplayer.me/695e6d581c1817592c688b0c.glb?morphTargets=ARKit&textureAtlas=1024",
+    "https://models.readyplayer.me/6977720002217beb7bb9b2ae.glb?morphTargets=ARKit&textureAtlas=1024",
   );
   const [customUrl, setCustomUrl] = useState("");
   const [useRPM, setUseRPM] = useState(true);
